@@ -95,7 +95,6 @@ const createLabelActions = (label,axis) => {
 };
 
 const plotChart = (data,currentLabelX,currentLabelY) => {
-    console.log("Data", data);
 
     chart.html("");
     createDynamicChartLabels(dataset);
