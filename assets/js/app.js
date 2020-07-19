@@ -127,7 +127,7 @@ const plotChart = (data,currentLabelX,currentLabelY) => {
     const tooltip = d3
         .tip()
         .attr("class","d3-tip")
-        .offset([-8,0])
+        .offset([-4,0])
         .html(d => `<div>
                     <span><b>${d.state}</b></span>
                     <br>${currentLabelX.charAt(0).toUpperCase()+currentLabelX.slice(1)}: ${d[currentLabelX].toFixed(1)}${currentLabelX === "poverty" ? "%" : ""}
@@ -170,23 +170,23 @@ const plotChart = (data,currentLabelX,currentLabelY) => {
 
     chart
         .selectAll(".stateCircle")
-        .transition()  // Transition from old to new
-        .duration(1000)  // Length of animation
-        .on("start", function() { // Start animation
+        .transition()
+        .duration(1000)
+        .on("start", function() {
             d3
-                .select(this)  // 'this' means the current element
-                .attr("r", 12)  // Change size
+                .select(this)
+                .attr("r", 12)
          })
         .delay(function(d, i) {
-            return i / data.length * 500;  // Dynamic delay (i.e. each item delays a little longer)
+            return i / data.length * 300;
         })
         .attr("cx", d => xScale(d[currentLabelX]))
         .attr("cy", d => yScale(d[currentLabelY]))
-        .on("end", function() {  // End animation
-            d3.select(this)  // 'this' means the current element
+        .on("end", function() {
+            d3.select(this)
                 .transition()
                 .duration(500)
-                .attr("r", 12);  // Change radius
+                .attr("r", 12);
         });
 
     chart
@@ -214,7 +214,7 @@ const plotChart = (data,currentLabelX,currentLabelY) => {
             }
         })
         .attr("dy","0.2em")
-        .attr("fill", "transparent")
+        .attr("fill", "white")
         .text(d => d.abbr)
         .on("mouseover", tooltip.show)
         .on("mouseout",tooltip.hide);
@@ -227,13 +227,16 @@ const plotChart = (data,currentLabelX,currentLabelY) => {
             d3
                 .select(this)
         })
+        .delay(function(d, i) {
+            return i / data.length * 300;
+        })
         .attr("x", d => xScale(d[currentLabelX]))
         .attr("y", d => yScale(d[currentLabelY])+3)
-        .on("end", function() {  // End animation
-            d3.select(this)  // 'this' means the current element
+        .on("end", function() {
+            d3.select(this)
                 .transition()
                 .duration(500)
-                .style("fill", "#fff");  // Change radius
+                .style("fill", "#fff");
         });
 
     chart
