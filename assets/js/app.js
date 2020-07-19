@@ -32,50 +32,47 @@ let obeseLabel;
 let currentLabelX = "poverty";
 let currentLabelY = "healthcare";
 
-
-
-
 const createDynamicChartLabels = () => {
 
     povertyLabel = chart
         .append("text")
         .attr("id","poverty")
-        .classed("label inactive",true)
+        .classed(`label ${currentLabelX === "poverty" ? "active" : "inactive"} aText`,true)
         .attr("transform",`translate(${chartWidth/2-margin.left/5},${(chartHeight+margin.top/3)+margin.bottom/6})`)
         .text("Age Poverty (%)");
 
     healthcareLabel = chart
         .append("text")
         .attr("id","healthcare")
-        .classed("label inactive",true)
+        .classed(`label ${currentLabelY === "healthcare" ? "active" : "inactive"} aText`,true)
         .attr("transform",`translate(${-margin.left/9},${chartHeight/2+margin.top*1.5}) rotate(-90)`)
         .text("Lacks Healthcare (%)");
 
     ageLabel =  chart
         .append("text")
         .attr("id","age")
-        .classed("label inactive",true)
+        .classed(`label ${currentLabelX === "age" ? "active" : "inactive"} aText`,true)
         .attr("transform",`translate(${chartWidth/2-margin.left/5},${(chartHeight+margin.top/2)+margin.bottom/3})`)
         .text("Age (Median)");
 
     smokesLabel = chart
         .append("text")
         .attr("id","smokes")
-        .classed("label inactive",true)
+        .classed(`label ${currentLabelY === "smokes" ? "active" : "inactive"} aText`,true)
         .attr("transform",`translate(${-margin.left/5},${chartHeight/2+margin.top*1.5}) rotate(-90)`)
         .text("Smokes (%)");
 
     householdLabel =  chart
         .append("text")
         .attr("id","income")
-        .classed("label inactive",true)
+        .classed(`label ${currentLabelX === "income" ? "active" : "inactive"} aText`,true)
         .attr("transform",`translate(${chartWidth/2-margin.left/5},${(chartHeight+margin.top)+margin.bottom/3})`)
         .text("Household Income (Median)");
 
     obeseLabel = chart
         .append("text")
         .attr("id","obesity")
-        .classed("label inactive",true)
+        .classed(`label ${currentLabelY === "obesity" ? "active" : "inactive"} aText`,true)
         .attr("transform",`translate(${-margin.left/3+margin.right/22},${chartHeight/2+margin.top*1.5}) rotate(-90)`)
         .text("Obese (%)");
 };
@@ -83,7 +80,7 @@ const createDynamicChartLabels = () => {
 const addActionsToLabels = () => {
     [povertyLabel, ageLabel, householdLabel].forEach(l => createLabelActions(l,"x"));
     [healthcareLabel, smokesLabel, obeseLabel].forEach(l => createLabelActions(l,"y"));
-}
+};
 
 const createLabelActions = (label,axis) => {
     label.on("click",() => {
@@ -98,9 +95,7 @@ const createLabelActions = (label,axis) => {
 };
 
 const plotChart = (data,currentLabelX,currentLabelY) => {
-
-
-    console.log(data);
+    console.log("Data", data);
 
     chart.html("");
     createDynamicChartLabels(dataset);
@@ -129,30 +124,117 @@ const plotChart = (data,currentLabelX,currentLabelY) => {
     const leftAxis = d3
         .axisLeft(yScale);
 
+    const tooltip = d3
+        .tip()
+        .attr("class","d3-tip")
+        .offset([-8,0])
+        .html(d => `<div>
+                    <span><b>${d.state}</b></span>
+                    <br>${currentLabelX.charAt(0).toUpperCase()+currentLabelX.slice(1)}: ${d[currentLabelX].toFixed(1)}${currentLabelX === "poverty" ? "%" : ""}
+                    <br>${currentLabelY.charAt(0).toUpperCase()+currentLabelY.slice(1)}: ${d[currentLabelY].toFixed(1)}%
+                </div>`);
+
     chart
         .selectAll("circle")
         .data(data)
         .enter()
         .append("g")
-        .classed("stateCircle",true)
+        .classed("stateG",true)
         .append("circle")
-        .attr("data-poverty", d => d[currentLabelX])
-        .attr("data-healthcare", d => d[currentLabelY])
-        .attr("cx", d => xScale(d[currentLabelX]))
-        .attr("cy", d => yScale(d[currentLabelY]))
+        .classed("stateCircle",true)
+        .attr("data-x", d => d[currentLabelX])
+        .attr("data-y", d => d[currentLabelY])
+        .attr("cx", d => {
+            if(d.lastXPos) {
+                const newPos = d.lastXPos;
+                d.lastXPos = xScale(d[currentLabelX]);
+                return newPos;
+            } else {
+                d.lastXPos = xScale(d[currentLabelX]);
+                return d.lastXPos
+            }
+        })
+        .attr("cy", d => {
+            if(d.lastYPos) {
+                const newPos = d.lastYPos;
+                d.lastYPos = yScale(d[currentLabelY]);
+                return newPos;
+            } else {
+                d.lastYPos = yScale(d[currentLabelY]);
+                return d.lastYPos
+            }
+        })
         .attr("r","12")
         .attr("fill","rgb(142,192,213)");
 
+
     chart
-        .selectAll("g.stateCircle")
+        .selectAll(".stateCircle")
+        .transition()  // Transition from old to new
+        .duration(1000)  // Length of animation
+        .on("start", function() { // Start animation
+            d3
+                .select(this)  // 'this' means the current element
+                .attr("r", 12)  // Change size
+         })
+        .delay(function(d, i) {
+            return i / data.length * 500;  // Dynamic delay (i.e. each item delays a little longer)
+        })
+        .attr("cx", d => xScale(d[currentLabelX]))
+        .attr("cy", d => yScale(d[currentLabelY]))
+        .on("end", function() {  // End animation
+            d3.select(this)  // 'this' means the current element
+                .transition()
+                .duration(500)
+                .attr("r", 12);  // Change radius
+        });
+
+    chart
+        .selectAll("g.stateG")
         .append("text")
-        .classed("abbr",true)
-        .attr("fill","#fff")
-        .attr("text-anchor","middle")
-        .attr("x", d => xScale(d[currentLabelX]))
-        .attr("y",d => yScale(d[currentLabelY])+2)
+        .classed("stateText",true)
+        .attr("x", d => {
+            if(d.lastXTextPos) {
+                const newPos = d.lastXTextPos;
+                d.lastXTextPos = xScale(d[currentLabelX]);
+                return newPos;
+            } else {
+                d.lastXTextPos = xScale(d[currentLabelX]);
+                return d.lastXTextPos
+            }
+        })
+        .attr("y",d => {
+            if(d.lastYTextPos) {
+                const newPos = d.lastYTextPos;
+                d.lastYTextPos = yScale(d[currentLabelY])+3.0;
+                return newPos;
+            } else {
+                d.lastYTextPos = yScale(d[currentLabelY])+3.0;
+                return d.lastYTextPos
+            }
+        })
         .attr("dy","0.2em")
-        .text(d => d.abbr);
+        .attr("fill", "transparent")
+        .text(d => d.abbr)
+        .on("mouseover", tooltip.show)
+        .on("mouseout",tooltip.hide);
+
+    chart
+        .selectAll(".stateText")
+        .transition()
+        .duration(1000)
+        .on("start", function() {
+            d3
+                .select(this)
+        })
+        .attr("x", d => xScale(d[currentLabelX]))
+        .attr("y", d => yScale(d[currentLabelY])+3)
+        .on("end", function() {  // End animation
+            d3.select(this)  // 'this' means the current element
+                .transition()
+                .duration(500)
+                .style("fill", "#fff");  // Change radius
+        });
 
     chart
         .append("g")
@@ -180,7 +262,9 @@ const plotChart = (data,currentLabelX,currentLabelY) => {
         .select("#y-axis")
         .selectAll(".tick:last-child")
         .remove();
-}
+
+    chart.call(tooltip);
+};
 
 
 const init = async() => {
@@ -190,7 +274,7 @@ const init = async() => {
     } catch (e) {
         console.log(e);
     }
-}
+};
 
 init();
 
